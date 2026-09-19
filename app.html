@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>내 소비성향 확인 — F-01</title>
+<style>
+  :root {
+    --ink: #1c2430;
+    --sub: #5b6472;
+    --line: #e4e8ee;
+    --bg: #ffffff;
+    --panel: #f5f7fa;
+    --accent: #2f6f5e;
+    --accent-light: #e4f1ec;
+    --error: #b3341e;
+    --error-bg: #fbeceb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.6;
+  }
+  main { max-width: 480px; margin: 0 auto; padding: 40px 20px 60px; }
+  a.back { font-size: 13px; color: var(--sub); text-decoration: none; }
+  h1 { font-size: 22px; margin: 14px 0 6px; }
+  p.lede { font-size: 14px; color: var(--sub); margin: 0 0 24px; }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 2px 10px rgba(28, 36, 48, 0.06);
+    margin-bottom: 18px;
+  }
+
+  label { display: block; font-size: 13px; color: var(--sub); margin-bottom: 6px; }
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  input[type="text"] {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--panel);
+  }
+  input[type="text"]:focus { outline: 2px solid var(--accent); background: #fff; }
+
+  button#calcBtn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    margin-top: 6px;
+    cursor: pointer;
+  }
+
+  #resultArea { min-height: 20px; }
+  .msg {
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+  .msg.error { background: var(--error-bg); color: var(--error); }
+
+  .headline { text-align: center; margin-bottom: 18px; }
+  .headline .rate { font-size: 34px; font-weight: 700; color: var(--accent); }
+  .headline .diff { font-size: 15px; color: var(--ink); margin-top: 6px; }
+  .headline .total { font-size: 13px; color: var(--sub); margin-top: 10px; }
+
+  .cat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .cat-row:last-child { border-bottom: none; }
+  .cat-row .bar-bg {
+    flex: 1;
+    height: 8px;
+    background: var(--line);
+    border-radius: 4px;
+    margin: 0 12px;
+    overflow: hidden;
+  }
+  .cat-row .bar-fill { height: 100%; background: var(--accent); }
+
+  .source-note {
+    font-size: 12px;
+    color: var(--sub);
+    margin-top: 14px;
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./index.html">← 랜딩으로 돌아가기</a>
+  <h1>이번 달, 나는 얼마나 쓰고 있을까요?</h1>
+  <p class="lede">소득과 카테고리별 지출을 원하는 만큼 입력하면, 전국 평균과 비교해 드립니다.</p>
+
+  <div class="card">
+    <div class="field">
+      <label for="income">이번 달 소득(원)</label>
+      <input type="text" inputmode="numeric" id="income" placeholder="예: 3000000">
+    </div>
+    <div class="field">
+      <label for="cat-식비">식비(원)</label>
+      <input type="text" inputmode="numeric" id="cat-식비" placeholder="예: 800000">
+    </div>
+    <div class="field">
+      <label for="cat-배달">배달(원)</label>
+      <input type="text" inputmode="numeric" id="cat-배달" placeholder="예: 400000">
+    </div>
+    <div class="field">
+      <label for="cat-쇼핑">쇼핑(원)</label>
+      <input type="text" inputmode="numeric" id="cat-쇼핑" placeholder="예: 900000">
+    </div>
+    <div class="field">
+      <label for="cat-교통">교통(원)</label>
+      <input type="text" inputmode="numeric" id="cat-교통" placeholder="예: 400000">
+    </div>
+    <button id="calcBtn">결과 보기</button>
+  </div>
+
+  <div id="resultArea"></div>
+</main>
+
+<script src="./data.js"></script>
+<script src="./app.js"></script>
+<script>
+  document.getElementById("calcBtn").addEventListener("click", function () {
+    const income = document.getElementById("income").value;
+    const categories = {
+      식비: document.getElementById("cat-식비").value,
+      배달: document.getElementById("cat-배달").value,
+      쇼핑: document.getElementById("cat-쇼핑").value,
+      교통: document.getElementById("cat-교통").value
+    };
+
+    const check = validateInput(income, categories);
+    const resultArea = document.getElementById("resultArea");
+
+    if (!check.valid) {
+      resultArea.innerHTML = '<div class="card"><div class="msg error">' + check.message + "</div></div>";
+      return;
+    }
+
+    const result = calcResult(income, categories);
+    const diffText = result.diff >= 0
+      ? "전국 평균(" + window.APP_DATA.AVG_CONSUMPTION_RATIO + "%)보다 " + Math.abs(result.diff) + "%p 높음"
+      : "전국 평균(" + window.APP_DATA.AVG_CONSUMPTION_RATIO + "%)보다 " + Math.abs(result.diff) + "%p 낮음";
+
+    let rowsHtml = "";
+    window.APP_DATA.CATEGORIES.forEach(function (c) {
+      const pct = result.ratios[c.key] || 0;
+      rowsHtml +=
+        '<div class="cat-row"><span>' + c.label + "</span>" +
+        '<div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+        "<span>" + pct.toFixed(1) + "%</span></div>";
+    });
+
+    resultArea.innerHTML =
+      '<div class="card">' +
+      '<div class="headline">' +
+      '<div class="rate">' + result.myRate.toFixed(1) + "%</div>" +
+      '<div class="diff">' + diffText + "</div>" +
+      '<div class="total">총지출 ' + formatWon(result.total) + "</div>" +
+      "</div>" +
+      rowsHtml +
+      '<div class="source-note">참고: 최근 소비자물가 전년대비 +' + window.APP_DATA.CPI_YOY + "%(" + window.APP_DATA.CPI_YOY_SOURCE + ")<br>" +
+      "평균 소비성향 출처: " + window.APP_DATA.AVG_CONSUMPTION_RATIO_SOURCE + "</div>" +
+      "</div>";
+  });
+</script>
+</body>
+</html>

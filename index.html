@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>내 소비, 평균과 비교해보기</title>
+<style>
+  :root {
+    --ink: #1c2430;
+    --sub: #5b6472;
+    --line: #e4e8ee;
+    --bg: #ffffff;
+    --panel: #f5f7fa;
+    --accent: #2f6f5e;
+    --accent-light: #e4f1ec;
+    --warn: #b3541e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.6;
+  }
+  section, header, footer {
+    padding: 56px 20px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 28px; margin: 0 0 12px; }
+  h2 { font-size: 20px; margin: 0 0 20px; }
+  .eyebrow {
+    display: inline-block;
+    font-size: 13px;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+  .hero { text-align: center; padding-top: 72px; }
+  .hero p.lede { font-size: 16px; color: var(--sub); max-width: 480px; margin: 0 auto; }
+
+  .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 24px 0; }
+  .stat-card {
+    flex: 1;
+    min-width: 200px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px 22px;
+    box-shadow: 0 2px 10px rgba(28, 36, 48, 0.06);
+    border: 1px solid var(--line);
+  }
+  .stat-card .num { font-size: 30px; font-weight: 700; color: var(--accent); }
+  .stat-card .cap { font-size: 13px; color: var(--sub); margin-top: 6px; }
+
+  .bar-chart { margin: 28px 0; }
+  .bar-row { margin-bottom: 14px; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px; }
+  .bar-track { background: var(--line); border-radius: 8px; height: 22px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 8px 0 0 8px; }
+  .bar-fill.avg { background: #9aa4b2; }
+  .bar-fill.mine { background: var(--accent); }
+
+  .note { font-size: 14px; color: var(--sub); }
+  .note.limit { border-left: 3px solid var(--line); padding-left: 12px; margin-top: 10px; }
+
+  .persona-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 20px;
+    box-shadow: 0 2px 10px rgba(28, 36, 48, 0.06);
+    border: 1px solid var(--line);
+  }
+  .persona-card .quote { font-style: normal; font-size: 15px; margin-top: 10px; }
+  .step-flow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+  .step {
+    flex: 1;
+    min-width: 130px;
+    text-align: center;
+    padding: 14px 8px;
+    border-radius: 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .step.low { border-color: var(--warn); background: #fdf1e8; font-weight: 600; }
+
+  .cta-box { text-align: center; }
+  .cta-sub { font-size: 13px; color: var(--sub); margin-top: 10px; }
+
+  .app-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 20px;
+    box-shadow: 0 2px 10px rgba(28, 36, 48, 0.06);
+    border: 1px solid var(--line);
+    text-align: left;
+  }
+  .app-card label { display: block; font-size: 13px; color: var(--sub); margin-bottom: 6px; }
+  .app-card .field { margin-bottom: 14px; }
+  .app-card .field:last-of-type { margin-bottom: 0; }
+  .app-card input[type="text"] {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--panel);
+  }
+  .app-card input[type="text"]:focus { outline: 2px solid var(--accent); background: #fff; }
+  #calcBtnHome {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    margin-top: 18px;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(47, 111, 94, 0.25);
+  }
+  .msg { padding: 14px 16px; border-radius: 12px; font-size: 14px; margin-top: 18px; }
+  .msg.error { background: #fbeceb; color: #b3341e; }
+  .headline { text-align: center; margin: 18px 0; }
+  .headline .rate { font-size: 34px; font-weight: 700; color: var(--accent); }
+  .headline .diff { font-size: 15px; color: var(--ink); margin-top: 6px; }
+  .headline .total { font-size: 13px; color: var(--sub); margin-top: 10px; }
+  .home-cat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .home-cat-row:last-child { border-bottom: none; }
+  .home-cat-row .bar-bg { flex: 1; height: 8px; background: var(--line); border-radius: 4px; margin: 0 12px; overflow: hidden; }
+  .home-cat-row .bar-fill2 { height: 100%; background: var(--accent); }
+  .source-note { font-size: 12px; color: var(--sub); margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+
+  .test-box {
+    border: 1px dashed var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    color: var(--sub);
+    font-size: 14px;
+    background: var(--panel);
+  }
+
+  .usage-list { padding-left: 18px; }
+  .usage-list li { margin-bottom: 8px; }
+
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--sub);
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+    padding-bottom: 40px;
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <span class="eyebrow">개인 지출관리 데모</span>
+  <h1>계좌 연동 없이, 이번 달 지출을 카테고리별로 입력하면<br>전국 평균과 바로 비교해 드립니다.</h1>
+  <p class="lede">가계부 앱을 한 번도 써본 적 없어도 괜찮습니다. 소득과 카테고리별 지출만 입력하면 끝입니다.</p>
+</header>
+
+<section id="data">
+  <h2>② 데이터로 본 문제</h2>
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="num">67.2%</div>
+      <div class="cap">가구 평균소비성향(소득 대비 지출 비율)<br>2025년 3분기 · 국가데이터처 가계동향조사(2025.11.27 발표)</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">+3.09%</div>
+      <div class="cap">소비자물가 전년동월비<br>2026-08 · OECD Data Explorer</div>
+    </div>
+  </div>
+
+  <div class="bar-chart">
+    <div class="bar-row">
+      <div class="bar-label"><span>전국 평균 소비성향</span><span>67.2%</span></div>
+      <div class="bar-track"><div class="bar-fill avg" style="width:67.2%"></div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label"><span>예시 가구(소득 300만·지출 250만)</span><span>83.3%</span></div>
+      <div class="bar-track"><div class="bar-fill mine" style="width:83.3%"></div></div>
+    </div>
+  </div>
+  <p class="note">해석: 이 예시 가구는 평균적인 가구보다 소득의 <strong>16.1%p</strong> 더 많은 비중을 지출에 쓰고 있습니다.</p>
+  <p class="note limit">한계: 전국 평균은 가구원 수·연령·지역을 통제하지 않은 전체 평균이라, 1인 가구·사회초년생과 단순 비교하면 왜곡될 수 있습니다.</p>
+</section>
+
+<section id="who">
+  <h2>③ 누구의 어떤 순간</h2>
+  <div class="persona-card">
+    <strong>김지원(가상 인물, 20대 후반 회사원 3년 차)</strong>
+    <p class="quote">"계좌는 나눠놨는데, 하나씩 적기 귀찮아서 안 했더니 어느새 가볍게 쓴 것들이 쌓여있더라고요."</p>
+    <div class="step-flow">
+      <div class="step">카드값 보고 놀람</div>
+      <div class="step low">카드 2개·계좌 3개를<br>일일이 뒤짐 (가장 힘든 순간)</div>
+      <div class="step">카테고리별로<br>간단히 입력</div>
+      <div class="step">평균과 비교한<br>내 위치 확인</div>
+    </div>
+  </div>
+</section>
+
+<section id="cta">
+  <div class="cta-box">
+    <h2>④ 지금 내 소비성향 확인해보기</h2>
+    <p class="cta-sub">소득과 카테고리별 지출을 입력하면 바로 결과를 볼 수 있어요.</p>
+  </div>
+  <div class="app-card">
+    <div class="field">
+      <label for="home-income">이번 달 소득(원)</label>
+      <input type="text" inputmode="numeric" id="home-income" placeholder="예: 3000000">
+    </div>
+    <div class="field">
+      <label for="home-cat-식비">식비(원)</label>
+      <input type="text" inputmode="numeric" id="home-cat-식비" placeholder="예: 800000">
+    </div>
+    <div class="field">
+      <label for="home-cat-배달">배달(원)</label>
+      <input type="text" inputmode="numeric" id="home-cat-배달" placeholder="예: 400000">
+    </div>
+    <div class="field">
+      <label for="home-cat-쇼핑">쇼핑(원)</label>
+      <input type="text" inputmode="numeric" id="home-cat-쇼핑" placeholder="예: 900000">
+    </div>
+    <div class="field">
+      <label for="home-cat-교통">교통(원)</label>
+      <input type="text" inputmode="numeric" id="home-cat-교통" placeholder="예: 400000">
+    </div>
+    <button id="calcBtnHome">결과 보기</button>
+    <div id="resultAreaHome"></div>
+  </div>
+  <p class="cta-sub"><a href="./app.html">전체 화면으로 열기 →</a></p>
+</section>
+
+<section id="test">
+  <h2>⑤ 테스트 결과</h2>
+  <div class="test-box" style="text-align:left;">
+    <div class="cat-row"><strong>R-01 정상 —&nbsp;</strong>83.3%, 평균보다 16.1%p 높음 (확인됨)</div>
+    <div class="cat-row"><strong>R-02 빈값 —&nbsp;</strong>"소득과 지출을 하나 이상 입력해야..." 안내 (확인됨)</div>
+    <div class="cat-row"><strong>R-03 오류 —&nbsp;</strong>"금액 칸에는 0 이상의 숫자만..." 안내 (확인됨)</div>
+    <div class="cat-row"><strong>R-04 경계값(소득 0) —&nbsp;</strong>"소비성향을 계산하려면 소득을..." 안내 (확인됨)</div>
+  </div>
+  <p class="note">Edge 브라우저로 로컬에서 직접 눌러 확인했습니다(docs/test_log.md). 배포 주소에서의 재확인은 다음 단계에서 진행합니다.</p>
+</section>
+
+<section id="usage">
+  <h2>⑥ 활용 방안 · 다음 개선</h2>
+  <ul class="usage-list">
+    <li>오늘은 카테고리 총액을 직접 입력하는 방식이지만, 이후 계좌·카드 데이터 연동(마이데이터/오픈뱅킹)으로 자동 입력을 검토할 수 있습니다.</li>
+    <li>다음 달에도 다시 방문해 지난달과 비교하는 기능(F-03)은 오늘은 만들지 않았습니다.</li>
+    <li>진입 시 "카드값 놀랐다면 3분만에 확인" 같은 안내 문구(F-02)는 이후 랜딩에 추가로 실험할 수 있습니다.</li>
+  </ul>
+</section>
+
+<footer>
+  수업 과제 데모 · 투자 판단 근거 아님 · 여기 표시된 예시 소득·지출 금액은 계산 방식을 보여주기 위한 예시입니다.
+</footer>
+
+<script src="./data.js"></script>
+<script src="./app.js"></script>
+<script>
+  document.getElementById("calcBtnHome").addEventListener("click", function () {
+    const income = document.getElementById("home-income").value;
+    const categories = {
+      식비: document.getElementById("home-cat-식비").value,
+      배달: document.getElementById("home-cat-배달").value,
+      쇼핑: document.getElementById("home-cat-쇼핑").value,
+      교통: document.getElementById("home-cat-교통").value
+    };
+
+    const check = validateInput(income, categories);
+    const resultArea = document.getElementById("resultAreaHome");
+
+    if (!check.valid) {
+      resultArea.innerHTML = '<div class="msg error">' + check.message + "</div>";
+      return;
+    }
+
+    const result = calcResult(income, categories);
+    const diffText = result.diff >= 0
+      ? "전국 평균(" + window.APP_DATA.AVG_CONSUMPTION_RATIO + "%)보다 " + Math.abs(result.diff) + "%p 높음"
+      : "전국 평균(" + window.APP_DATA.AVG_CONSUMPTION_RATIO + "%)보다 " + Math.abs(result.diff) + "%p 낮음";
+
+    let rowsHtml = "";
+    window.APP_DATA.CATEGORIES.forEach(function (c) {
+      const pct = result.ratios[c.key] || 0;
+      rowsHtml +=
+        '<div class="home-cat-row"><span>' + c.label + "</span>" +
+        '<div class="bar-bg"><div class="bar-fill2" style="width:' + pct + '%"></div></div>' +
+        "<span>" + pct.toFixed(1) + "%</span></div>";
+    });
+
+    resultArea.innerHTML =
+      '<div class="headline">' +
+      '<div class="rate">' + result.myRate.toFixed(1) + "%</div>" +
+      '<div class="diff">' + diffText + "</div>" +
+      '<div class="total">총지출 ' + formatWon(result.total) + "</div>" +
+      "</div>" +
+      rowsHtml +
+      '<div class="source-note">참고: 최근 소비자물가 전년대비 +' + window.APP_DATA.CPI_YOY + "%(" + window.APP_DATA.CPI_YOY_SOURCE + ")<br>" +
+      "평균 소비성향 출처: " + window.APP_DATA.AVG_CONSUMPTION_RATIO_SOURCE + "</div>";
+  });
+</script>
+</body>
+</html>
